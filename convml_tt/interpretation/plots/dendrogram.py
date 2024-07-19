@@ -39,6 +39,8 @@ def _get_tile_image(tile_dataset, tile_id, tile_type):
         )
     elif isinstance(tile_dataset, ImageSingletDataset):
         tile_image = tile_dataset.get_image(tile_id=tile_id)
+    elif isinstance(tile_dataset, MovingWindowImageTilingDataset):
+        tile_image = tile_dataset.get_image(tile_id=tile_id)
     else:
         raise NotImplementedError(tile_dataset)
     return tile_image
@@ -144,6 +146,7 @@ def dendrogram(
     return_clusters=False,
     color="black",
     linkage_method="ward",
+    tile_dataset=None,
     **kwargs
 ):
     """
@@ -193,13 +196,20 @@ def dendrogram(
                 " from embeddings of triplets"
             )
         tile_type = kwargs.pop("tile_type")
+        tile_dataset = kwargs.pop("tile_dataset")
     else:
-        tile_dataset = ImageSingletDataset(
-            data_dir=da_embeddings.data_dir,
-            tile_type=da_embeddings.tile_type,
-            stage=da_embeddings.stage,
-        )
-        tile_type = da_embeddings.tile_type
+        if tile_dataset is not None:
+            # use tile-dataset as is
+            tile_type = None
+        else:
+            # try use attributes on the embedding vector data-array
+            # to work out where the tile images are stored
+            tile_dataset = ImageSingletDataset(
+                data_dir=da_embeddings.data_dir,
+                tile_type=da_embeddings.tile_type,
+                stage=da_embeddings.stage,
+            )
+            tile_type = da_embeddings.tile_type
 
     fig_margin = 0.4  # [inches]
     fig_width = 10.0 + 2.0 * fig_margin  # [inches]
